@@ -105,8 +105,10 @@ describe("Sus Page Full Flow Integration with Real Engine", () => {
       { timeout: 2000 }
     );
 
-    expect(screen.getByRole("img", { name: /rule score 0 out of 100/i })).toBeInTheDocument();
-    expect(screen.getByText("No common scam signs were found.")).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: /No common warning signs; rule score 0 out of 100/i })
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/No common scam signs were found/i).length).toBeGreaterThan(0);
   });
 
   it("handles mixed protective warning and scam in separate clauses", async () => {

@@ -16,7 +16,7 @@ function formatAssessmentSummary(result: AnalysisResult): string {
         ? "BE CAREFUL"
         : "LOW RISK";
   return [
-    `SUS Scam Risk Assessment: ${riskTitle} (${result.riskScorePercent}% Rule Score)`,
+    `SUS result: ${riskTitle} (Rule score: ${result.riskScorePercent}/100)`,
     "",
     "Summary:",
     result.summary,
@@ -97,7 +97,7 @@ const SIGNAL_LABELS: Record<string, string> = {
 };
 
 export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
-  const { riskLevel, riskScorePercent, findings } = result;
+  const { riskLevel, findings } = result;
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const signalGroups = findings.reduce<Array<{ label: string; evidence: string[] }>>(
     (groups, item) => {
@@ -105,7 +105,14 @@ export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
       const evidence = item.highlightedText || item.span?.text;
       const group = groups.find((entry) => entry.label === label);
       if (group) {
-        if (evidence && !group.evidence.includes(evidence)) group.evidence.push(evidence);
+        if (
+          evidence &&
+          !group.evidence.some(
+            (existing) => existing.includes(evidence) || evidence.includes(existing)
+          )
+        ) {
+          group.evidence.push(evidence);
+        }
       } else {
         groups.push({ label, evidence: evidence ? [evidence] : [] });
       }
@@ -117,27 +124,28 @@ export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
   const riskDisplay = {
     high: {
       label: "High risk",
-      color: "#C2413A",
-      meaning: "This message may be a scam. Do not click links or share personal information.",
+      color: "#991B1B",
+      meaning: "This message may be a scam.",
       recommendation:
-        "Do not reply or click links. Contact the company through its official app or phone number.",
+        "Do not click or reply. Check with the company using its official app or number.",
     },
     medium: {
-      label: "Be careful",
-      color: "#B7791F",
-      meaning: "This message has warning signs. Check before you respond.",
+      label: "Check carefully",
+      color: "#DC2626",
+      meaning: "This message has warning signs.",
       recommendation:
-        "Do not act yet. Contact the person or company through a trusted number or app.",
+        "Do not click links or share details until you verify the message.",
     },
     low: {
       label: "No common warning signs",
       color: "#27805A",
-      meaning:
-        "No common scam signs were found. This does not prove the message is genuine.",
+      meaning: "No common scam signs were found.",
       recommendation:
-        "If it asks for money or personal details, confirm with the sender another way.",
+        "Confirm requests for money or personal details directly with the sender.",
     },
   }[riskLevel];
+  const score = Math.max(0, Math.min(100, result.riskScorePercent));
+  const gaugeLength = Math.PI * 88;
 
   const handleCopySummary = async () => {
     try {
@@ -163,7 +171,7 @@ export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
         <div
           className="relative mx-auto h-[5.75rem] w-44 shrink-0 sm:mx-0"
           role="img"
-          aria-label={`${riskDisplay.label}, rule score ${riskScorePercent} out of 100`}
+          aria-label={`${riskDisplay.label}; rule score ${score} out of 100`}
         >
           <svg viewBox="0 0 200 110" className="h-full w-full" aria-hidden="true">
             <path
@@ -179,24 +187,30 @@ export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
               stroke={riskDisplay.color}
               strokeWidth="14"
               strokeLinecap="round"
+              strokeDasharray={gaugeLength}
+              strokeDashoffset={gaugeLength * (1 - score / 100)}
             />
           </svg>
-          <span className="absolute inset-x-0 bottom-0 text-center text-2xl font-semibold tracking-tight text-[#17312D]">
-            {riskScorePercent}
+          <span
+            className="absolute inset-x-0 bottom-0 text-center text-3xl font-bold tracking-tight"
+            style={{ color: riskDisplay.color }}
+          >
+            {score}
             <span className="ml-0.5 text-sm font-medium text-[#647873]">/100</span>
           </span>
         </div>
         <div className="min-w-0 flex-1 text-center sm:text-left">
-          <p className="text-xs font-medium uppercase tracking-wide text-[#647873]">
-            Rule score
-          </p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#17312D]">
             {riskDisplay.label}
           </h2>
+          <p className="mt-1 text-xs font-medium text-[#647873]">Rule score</p>
           <p className="mt-2 text-sm leading-relaxed text-[#52645E]">{riskDisplay.meaning}</p>
-          <p className="mt-2 text-xs text-[#647873]">
-            Score shows matched warning signs, not certainty.
+          <p className="mt-1 text-xs text-[#647873]">
+            Based on warning signs found, not a probability.
           </p>
+          {riskLevel === "low" && (
+            <p className="mt-1 text-xs text-[#647873]">This does not prove it is safe.</p>
+          )}
         </div>
       </div>
 

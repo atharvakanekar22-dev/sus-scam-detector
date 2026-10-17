@@ -102,22 +102,38 @@ export function analyzeMessage(rawInput: string): AnalyzeResponse {
   const activeIds = new Set(Array.from(uniqueTriggeredRules.keys()));
 
   const hasCred =
-    activeIds.has("CRED-01") || activeIds.has("CRED-02") || activeIds.has("CRED-03");
+    activeIds.has("CRED-01") ||
+    activeIds.has("CRED-02") ||
+    activeIds.has("CRED-03") ||
+    activeIds.has("CRED-04") ||
+    activeIds.has("CRED-05");
   const hasUrg =
-    activeIds.has("URG-01") || activeIds.has("URG-02") || activeIds.has("URG-03");
+    activeIds.has("URG-01") ||
+    activeIds.has("URG-02") ||
+    activeIds.has("URG-03") ||
+    activeIds.has("URG-04") ||
+    activeIds.has("URG-05");
   const hasUtilityCutoff = activeIds.has("URG-01");
   const hasSuspiciousLink =
-    activeIds.has("LINK-01") || activeIds.has("LINK-03");
+    activeIds.has("LINK-01") ||
+    activeIds.has("LINK-03") ||
+    activeIds.has("LINK-05") ||
+    activeIds.has("LINK-06");
   const hasPersonalPhone = activeIds.has("IMP-01");
-  const hasLottery = activeIds.has("FIN-02");
-  const hasAdvanceFee = activeIds.has("FIN-03");
+  const hasLottery = activeIds.has("FIN-02") || activeIds.has("FIN-04");
+  const hasAdvanceFee =
+    activeIds.has("FIN-03") || activeIds.has("FIN-05");
 
   // Critical Overrides
   const overrideA = hasCred && hasUrg; // Credential demand + urgency threat
   const overrideB = hasUtilityCutoff && (hasSuspiciousLink || hasPersonalPhone); // Power shutoff + fake link/phone
   const overrideC = hasLottery && hasAdvanceFee; // Lottery lure + advance processing fee
+  const overrideD = hasUrg && hasSuspiciousLink; // Urgent account/delivery threat + action link
+  const overrideE = hasLottery && hasCred; // Prize claim + request for personal or bank details
+  const overrideF = hasAdvanceFee && hasSuspiciousLink; // Advance fee or promised return + link
 
-  const isCriticalOverride = overrideA || overrideB || overrideC;
+  const isCriticalOverride =
+    overrideA || overrideB || overrideC || overrideD || overrideE || overrideF;
 
   let riskLevel: RiskLevel;
 

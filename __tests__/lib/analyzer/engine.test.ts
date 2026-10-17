@@ -65,6 +65,122 @@ describe("Analysis Engine Integration & Regression Suite (26 Cases)", () => {
     expect(ruleIds).toContain("LINK-03");
   });
 
+  it("flags an urgently locked account paired with a deceptive verification link as high risk", () => {
+    const input =
+      "URGENT: Your bank account has been locked due to suspicious activity. Verify your identity immediately at https://secure-bank-verify.example-login.com. Failure to verify within 24 hours will result in permanent account closure.";
+    const result = analyzeMessage(input);
+
+    expect(result.riskLevel).toBe("high");
+    expect(result.heuristicScore).toBe(75);
+    expect(result.findings.map((finding) => finding.ruleId)).toContain("URG-02");
+    expect(result.findings.map((finding) => finding.ruleId)).toContain("LINK-03");
+  });
+
+  it.each([
+    [
+      "English account phishing",
+      "Your account will be suspended in 24 hours. Verify your details immediately: https://secure-verify.example-login.com",
+    ],
+    [
+      "Hindi account phishing",
+      "आपका बैंक खाता अस्थायी रूप से बंद कर दिया गया है। खाता सक्रिय करने के लिए तुरंत लॉगिन करें: https://bank-verify.example.com",
+    ],
+    [
+      "Hindi prize claim",
+      "बधाई हो! आपका मोबाइल नंबर 10 लाख रुपये की लॉटरी में चुना गया है। पुरस्कार पाने के लिए अपना नाम और बैंक विवरण भेजें।",
+    ],
+    [
+      "Hindi delivery fee",
+      "आपका पार्सल डिलीवरी के लिए तैयार है। ₹29 शुल्क भरें और पता अपडेट करें: http://parcel-update.example.com",
+    ],
+    [
+      "Marathi account phishing",
+      "तुमचे बँक खाते असुरक्षित आहे. खाते सुरू ठेवण्यासाठी लगेच तपासा: https://secure-bank.example.com",
+    ],
+    [
+      "Marathi prize claim",
+      "अभिनंदन! तुमचा मोबाइल नंबर 5 लाख रुपयांच्या बक्षिसासाठी निवडला गेला आहे. माहिती पाठवा.",
+    ],
+    [
+      "Hinglish account phishing",
+      "Sir, aapka KYC pending hai. Account block hone se bachne ke liye abhi update karein: https://kyc-update.example.com",
+    ],
+    [
+      "Hinglish prize claim",
+      "Congratulations! Aapka number lottery mein select hua hai. ₹5 lakh claim karne ke liye details bhejo.",
+    ],
+    [
+      "Bengali account phishing",
+      "আপনার অ্যাকাউন্ট সাসপেন্ড হয়েছে। এখনই যাচাই করুন: https://account-check.example.com",
+    ],
+    [
+      "Tamil account phishing",
+      "உங்கள் வங்கிக் கணக்கு பாதுகாப்பற்றது. உடனே சரிபார்க்கவும்: https://bank-alert.example.com",
+    ],
+    [
+      "Telugu account phishing",
+      "మీ ఖాతా తాత్కালికంగా నిలిపివేయబడింది. వెంటనే ధృవీకరించండి: https://verify-account.example.com",
+    ],
+    [
+      "Gujarati account phishing",
+      "તમારું બેંક ખાતું બંધ થઈ શકે છે. તરત ચકાસો: https://bank-secure.example.com",
+    ],
+    [
+      "French prize claim",
+      "Félicitations ! Vous avez gagné 500 000 €. Envoyez vos coordonnées bancaires pour recevoir votre prix.",
+    ],
+    [
+      "Spanish delivery fee",
+      "¡Tu paquete está retenido! Paga 2,99 € para reprogramar la entrega: http://paquete.example.com",
+    ],
+    [
+      "German delivery link",
+      "Ihr Paket konnte nicht zugestellt werden. Bestätigen Sie Ihre Adresse hier: http://paket-example.com",
+    ],
+    [
+      "Chinese prize claim",
+      "恭喜！您的手机号码中奖，获得100万元奖金。请提供银行信息以领取奖励。",
+    ],
+    [
+      "Russian account phishing",
+      "Ваш банковский счёт заблокирован. Подтвердите личные данные: https://bank-secure.example.com",
+    ],
+    [
+      "Arabic prize claim",
+      "مبروك! تم اختيار رقمك للفوز بجائزة قدرها 100,000 دولار. أرسل بياناتك البنكية لاستلام الجائزة.",
+    ],
+    [
+      "English cryptocurrency investment",
+      "Only today—invest ₹1,000 and get 10x return guaranteed! Join fast: http://crypto-profit.example.com",
+    ],
+  ])("scores %s as high risk", (_label, message) => {
+    const result = analyzeMessage(message);
+
+    expect(result.riskLevel).toBe("high");
+    expect(result.heuristicScore).toBeGreaterThanOrEqual(75);
+  });
+
+  it.each([
+    "MEGA SALE! 80% OFF everything today only. Shop now: http://deals.example.com Reply STOP to opt out.",
+    "धमाकेदार ऑफर! आज सभी मोबाइल रिचार्ज पर 50% कैशबैक पाएं। अभी क्लिक करें: http://offer.example.com",
+    "Hi, this is Rahul from the college coding club. Meeting moved to 5 PM.",
+    "Your verification code is 482913. Never share this code. Support will never ask for it.",
+  ])("does not inflate a promotion or legitimate message score: %s", (message) => {
+    const result = analyzeMessage(message);
+
+    expect(result.riskLevel).not.toBe("high");
+    expect(result.heuristicScore).toBeLessThan(55);
+  });
+
+  it("does not treat an ordinary parcel-ready notification as a scam", () => {
+    const result = analyzeMessage(
+      "Your parcel is ready for delivery tomorrow. No action is needed."
+    );
+
+    expect(result.riskLevel).toBe("low");
+    expect(result.heuristicScore).toBe(0);
+  });
+
   it("TC-07: Lottery Advance Fee Scam", () => {
     const input =
       "Congratulations you won lottery Rs. 25,00,000! Transfer advance processing fee Rs 1,000 to release prize.";

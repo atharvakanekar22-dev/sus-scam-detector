@@ -24,14 +24,18 @@ describe("ResultsPanel Component", () => {
     render(<ResultsPanel result={MOCK_HIGH_RISK_RESULT} onReset={onReset} />);
 
     expect(screen.getByRole("heading", { name: "High risk" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("img", { name: "High risk, rule score 88 out of 100" })
-    ).toBeInTheDocument();
-    expect(screen.getByText(/Score shows matched warning signs, not certainty/i)).toBeInTheDocument();
+    const gauge = screen.getByRole("img", {
+      name: "High risk; rule score 88 out of 100",
+    });
+    expect(gauge).toBeInTheDocument();
+    expect(gauge).toHaveTextContent("88/100");
+    expect(gauge.querySelectorAll("path")[1]).toHaveAttribute("stroke", "#991B1B");
+    expect(screen.getByText("Rule score")).toBeInTheDocument();
+    expect(screen.getByText(/Based on warning signs found, not a probability/i)).toBeInTheDocument();
     expect(screen.getByText(/Pressures you to act quickly/i)).toBeInTheDocument();
     expect(screen.getByText(/Contains a suspicious link/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "What to do" })).toBeInTheDocument();
-    expect(screen.getByText(/Do not reply or click links/i)).toBeInTheDocument();
+    expect(screen.getByText(/Do not click or reply/i)).toBeInTheDocument();
     expect(screen.queryByText(/Phase 1 UI Demonstration/i)).not.toBeInTheDocument();
 
     const resetBtn = screen.getByRole("button", { name: /Check another message/i });
@@ -42,10 +46,14 @@ describe("ResultsPanel Component", () => {
   it("shows the medium-risk color gauge and plain-language result", () => {
     render(<ResultsPanel result={MOCK_MEDIUM_RISK_RESULT} onReset={vi.fn()} />);
 
-    expect(screen.getByRole("heading", { name: "Be careful" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("img", { name: "Be careful, rule score 58 out of 100" })
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Check carefully" })).toBeInTheDocument();
+    const gauge = screen.getByRole("img", {
+      name: "Check carefully; rule score 58 out of 100",
+    });
+    expect(gauge).toBeInTheDocument();
+    expect(gauge.querySelectorAll("path")[1]).toHaveAttribute("stroke", "#DC2626");
+    const dashOffset = Number(gauge.querySelectorAll("path")[1].getAttribute("stroke-dashoffset"));
+    expect(dashOffset).toBeCloseTo(Math.PI * 88 * 0.42);
     expect(screen.getByText(/Asks for private codes or details/i)).toBeInTheDocument();
   });
 
@@ -54,7 +62,7 @@ describe("ResultsPanel Component", () => {
 
     expect(screen.getByRole("heading", { name: "No common warning signs" })).toBeInTheDocument();
     expect(
-      screen.getByText(/This does not prove the message is genuine/i)
+      screen.getByText(/This does not prove it is safe/i)
     ).toBeInTheDocument();
   });
 
@@ -71,8 +79,28 @@ describe("ResultsPanel Component", () => {
 
     render(<ResultsPanel result={result} onReset={vi.fn()} />);
 
-    expect(screen.getByText(/Score shows matched warning signs, not certainty/i)).toBeInTheDocument();
+    expect(screen.getByText("Rule score")).toBeInTheDocument();
     expect(screen.queryByText(/Gemini/i)).not.toBeInTheDocument();
+  });
+
+  it("does not show backend fallback notices in the results interface", () => {
+    render(
+      <ResultsPanel
+        result={{
+          ...MOCK_HIGH_RISK_RESULT,
+          metadata: {
+            charCount: 80,
+            executionTimeMs: 12,
+            isHeuristic: true,
+            analysisMode: "rules",
+            analysisNotice: "Enhanced analysis is unavailable. Showing rule-based results.",
+          },
+        }}
+        onReset={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText(/Enhanced analysis is unavailable/i)).not.toBeInTheDocument();
   });
 
   it("renders accessible evidence highlights with screen-reader cues while preserving raw text", () => {
@@ -126,7 +154,7 @@ describe("ResultsPanel Component", () => {
     const copiedContent: string = writeTextMock.mock.calls[0][0];
 
     // Verify included fields
-    expect(copiedContent).toContain("SUS Scam Risk Assessment: HIGH RISK (88% Rule Score)");
+    expect(copiedContent).toContain("SUS result: HIGH RISK (Rule score: 88/100)");
     expect(copiedContent).toContain("Summary:");
     expect(copiedContent).toContain(MOCK_HIGH_RISK_RESULT.summary);
     expect(copiedContent).not.toContain("Disclaimer:");

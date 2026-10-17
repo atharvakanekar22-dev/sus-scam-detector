@@ -6,9 +6,11 @@ SUS checks suspicious messages for scam signals and explains the evidence behind
 
 - Local deterministic rules check known scam patterns.
 - When configured, the server also sends the message to Google's Gemini API for contextual analysis. The default model is `gemini-2.5-flash`; change it with `GEMINI_MODEL`.
+- Gemini is prompted to assess Hindi, other Indian languages, code-switching, and transliteration. Local rules cover selected phrases and examples in several scripts and Hinglish, but do not provide complete language coverage; accuracy for any language is not guaranteed.
 - Model findings are included only when their quoted evidence can be matched to the original message. The final risk level considers both Gemini and local rule results.
-- If Gemini is not configured or unavailable, SUS clearly labels the result as rule-based instead of silently pretending the AI review ran.
-- Gemini is a pre-trained hosted model; this project does not train or fine-tune it. No AI system can guarantee 100% correct scam decisions. Evaluate it against representative, human-labelled examples and verify important requests independently.
+- If Gemini is not configured or unavailable, the app falls back to deterministic rule analysis. The result view keeps backend/provider notices out of the user-facing assessment.
+- The displayed rule score is the capped weighted total of matching local rules, from 0 to 100. Certain combinations of account threats, suspicious links, credential requests, and payment/prize lures receive a minimum score of 75. The score is a heuristic signal score, not a probability or measured accuracy score; compare it with the risk label and warning signs.
+- Gemini is a pre-trained hosted model; this project does not train or fine-tune it. Language support and detection accuracy have not been measured against a representative, human-labelled dataset, and no AI system can guarantee 100% correct scam decisions. Verify important requests independently.
 
 **Privacy:** When Gemini is enabled, submitted message text is sent to Google's Gemini API. Avoid entering passwords, OTPs, or other sensitive personal information. SUS does not save scans to an application database.
 
