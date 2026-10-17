@@ -59,6 +59,20 @@ npm test
 npm run lint
 npm run build
 ```
+### Screenshots from the Live Web - Application
+
+<img width="216" height="116" alt="image" src="https://github.com/user-attachments/assets/cbf5d436-403a-433e-81cc-0ac87f4b1804" />
+
+<img width="959" height="563" alt="image" src="https://github.com/user-attachments/assets/dbf02977-8c85-4865-a704-2b28df2334cf" />
+
+<img width="959" height="563" alt="image" src="https://github.com/user-attachments/assets/afa57237-9d70-44fa-80d7-5296dcabec39" />
+
+<img width="959" height="597" alt="image" src="https://github.com/user-attachments/assets/fc4e3785-18fd-4dc2-9d44-0ad47321435d" />
+
+<img width="383" height="344" alt="image" src="https://github.com/user-attachments/assets/3801c74f-1641-4029-a190-cacf9fd8f83e" />
+
+
+
 
 ## Project Structure
 
