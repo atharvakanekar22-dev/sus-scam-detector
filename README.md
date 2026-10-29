@@ -3,6 +3,8 @@
 **Sus? Now you'll know why.**
 
   [Live Project 🚀](https://sus-scam-detector-4vsz.onrender.com/)    
+  [Video Overview 📹](https://drive.google.com/file/d/1Q9onqYjlLTrNYzt1Ygk-QDndsOKjV6Le/view?usp=drive_link)   
+  
 
 Sus helps people inspect suspicious text messages, chats, and emails. It highlights potential warning signs and explains what to look out for, so users can make more informed decisions before responding or clicking.
 
