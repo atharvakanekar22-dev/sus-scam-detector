@@ -23,6 +23,15 @@ export const SignalCategorySchema = z.enum([
   "suspicious_link",
   "impersonation",
   "security_advisory",
+  "job_scam",
+  "investment_fraud",
+  "delivery_scam",
+  "government_impersonation",
+  "remote_access",
+  "tech_support",
+  "malicious_attachment",
+  "upi_payment_scam",
+  "utility_cutoff",
 ]);
 export type SignalCategory = z.infer<typeof SignalCategorySchema>;
 
@@ -52,6 +61,46 @@ export const NextStepItemSchema = z.object({
 });
 export type NextStepItem = z.infer<typeof NextStepItemSchema>;
 
+export const UrlIndicatorSchema = z.object({
+  code: z.string(),
+  title: z.string(),
+  description: z.string(),
+  severity: z.enum(["low", "medium", "high"]),
+});
+export type UrlIndicator = z.infer<typeof UrlIndicatorSchema>;
+
+export const UrlBrandCheckSchema = z.object({
+  claimedBrand: z.string().optional(),
+  isOfficialDomain: z.boolean(),
+  isLookalike: z.boolean(),
+  confidence: z.enum(["confirmed", "likely", "inconclusive"]),
+  explanation: z.string(),
+});
+export type UrlBrandCheck = z.infer<typeof UrlBrandCheckSchema>;
+
+export const UrlThreatIntelSchema = z.object({
+  checked: z.boolean(),
+  provider: z.string().optional(),
+  malicious: z.boolean().optional(),
+  details: z.string().optional(),
+});
+export type UrlThreatIntel = z.infer<typeof UrlThreatIntelSchema>;
+
+export const AnalyzedUrlSchema = z.object({
+  originalUrl: z.string(),
+  normalizedUrl: z.string(),
+  hostname: z.string(),
+  protocol: z.string(),
+  isSuspicious: z.boolean(),
+  threatLevel: z.enum(["safe", "low", "medium", "high"]),
+  indicators: z.array(UrlIndicatorSchema),
+  brandCheck: UrlBrandCheckSchema.optional(),
+  threatIntel: UrlThreatIntelSchema.optional(),
+  span: EvidenceSpanSchema.optional(),
+  parseError: z.string().optional(),
+});
+export type AnalyzedUrl = z.infer<typeof AnalyzedUrlSchema>;
+
 export const AnalyzeResponseSchema = z.object({
   id: z.string(),
   timestamp: z.string(),
@@ -67,6 +116,7 @@ export const AnalyzeResponseSchema = z.object({
     analysisMode: z.enum(["gemini", "rules"]),
     analysisNotice: z.string().max(300).optional(),
   }),
+  analyzedUrls: z.array(AnalyzedUrlSchema).optional(),
 });
 export type AnalyzeResponse = z.infer<typeof AnalyzeResponseSchema>;
 

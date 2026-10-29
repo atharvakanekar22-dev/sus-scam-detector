@@ -1,3 +1,5 @@
+import { AnalyzedUrl } from "./schemas";
+
 export type RiskLevel = "low" | "medium" | "high";
 
 export interface SignalFinding {
@@ -32,6 +34,7 @@ export interface AnalysisResult {
   recommendedSteps: NextStepItem[];
   isMock: boolean;
   rawMessage?: string;
+  analyzedUrls?: AnalyzedUrl[];
   metadata?: {
     charCount: number;
     executionTimeMs: number;

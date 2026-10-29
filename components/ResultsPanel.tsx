@@ -15,15 +15,25 @@ function formatAssessmentSummary(result: AnalysisResult): string {
       : result.riskLevel === "medium"
         ? "BE CAREFUL"
         : "LOW RISK";
-  return [
+  const lines = [
     `SUS result: ${riskTitle} (Rule score: ${result.riskScorePercent}/100)`,
     "",
     "Summary:",
     result.summary,
     "",
-    "Recommended Actions:",
-    ...result.recommendedSteps.map((step) => `• ${step.text}`),
-  ].join("\n");
+  ];
+
+  if (result.analyzedUrls && result.analyzedUrls.length > 0) {
+    lines.push("Links Analyzed:");
+    for (const u of result.analyzedUrls) {
+      const issues = u.indicators.map((i) => i.title).join(", ") || "No suspicious indicators";
+      lines.push(`• ${u.hostname} (${u.threatLevel.toUpperCase()}): ${issues}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("Recommended Actions:", ...result.recommendedSteps.map((step) => `• ${step.text}`));
+  return lines.join("\n");
 }
 
 function renderHighlightedMessage(
@@ -92,6 +102,15 @@ const SIGNAL_LABELS: Record<string, string> = {
   suspicious_link: "Contains a suspicious link",
   impersonation: "Unverified contact details",
   security_advisory: "Safety warning",
+  job_scam: "Fake job or recruitment fee offer",
+  investment_fraud: "Unrealistic returns or crypto scheme",
+  delivery_scam: "Fake parcel delivery or fee request",
+  government_impersonation: "Impersonates government, police, or tax agency",
+  remote_access: "Requests remote access software installation",
+  tech_support: "Fake virus alert or tech support lure",
+  malicious_attachment: "Prompts download of suspicious app or file",
+  upi_payment_scam: "Deceptive UPI, QR code, or collect request",
+  utility_cutoff: "Threatens essential utility disconnection",
   urgency: "Pressures you to act quickly",
   personal_data: "Asks for private codes or details",
 };
@@ -161,6 +180,8 @@ export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
     }
   };
 
+  const hasUrls = Boolean(result.analyzedUrls && result.analyzedUrls.length > 0);
+
   return (
     <section
       aria-label="Analysis Results"
@@ -214,6 +235,7 @@ export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
         </div>
       </div>
 
+      {/* Warning Signs (Message Pattern Findings) */}
       <div className="space-y-3">
         <h2 className="text-base font-semibold text-[#17312D]">Warning signs</h2>
         {signalGroups.length > 0 ? (
@@ -238,6 +260,84 @@ export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
           </ul>
         ) : (
           <p className="text-sm text-[#52645E]">No common scam signs were found.</p>
+        )}
+      </div>
+
+      {/* Link Intelligence Section */}
+      <div className="space-y-3 border-t border-[#E7EEEA] pt-5">
+        <h2 className="text-base font-semibold text-[#17312D]">
+          Links in message {hasUrls && `(${result.analyzedUrls?.length})`}
+        </h2>
+        {hasUrls && result.analyzedUrls ? (
+          <div className="space-y-3">
+            {result.analyzedUrls.map((urlItem, idx) => {
+              const threatStyle = {
+                high: { bg: "bg-[#FDE8E6]", text: "text-[#991B1B]", label: "High risk link" },
+                medium: { bg: "bg-[#FFF3D7]", text: "text-[#76500F]", label: "Check carefully" },
+                low: { bg: "bg-[#E8F5EF]", text: "text-[#176246]", label: "Low concern" },
+                safe: { bg: "bg-[#E8F5EF]", text: "text-[#176246]", label: "Verified / standard" },
+              }[urlItem.threatLevel];
+
+              return (
+                <div
+                  key={`url-card-${idx}`}
+                  className="rounded-2xl border border-[#D9E7E1] bg-[#FBFDFC] p-4 text-sm space-y-2.5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-mono text-xs font-medium text-[#17312D] bg-[#F2F7F4] px-2 py-1 rounded select-all break-all">
+                      {urlItem.hostname}
+                    </span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${threatStyle.bg} ${threatStyle.text}`}>
+                      {threatStyle.label}
+                    </span>
+                  </div>
+
+                  {urlItem.brandCheck?.isOfficialDomain && (
+                    <p className="text-xs text-[#176246] font-medium">
+                      ✓ Matches official verified domain for {urlItem.brandCheck.claimedBrand}
+                    </p>
+                  )}
+
+                  {urlItem.brandCheck?.isLookalike && (
+                    <div className="rounded-lg bg-[#FDF1EF] border border-[#FACBC4] p-2.5 text-xs text-[#962526]">
+                      <p className="font-semibold">Possible brand impersonation</p>
+                      <p className="mt-0.5">{urlItem.brandCheck.explanation}</p>
+                    </div>
+                  )}
+
+                  {urlItem.parseError && (
+                    <p className="text-xs text-[#962526]">
+                      Link could not be parsed: {urlItem.parseError}
+                    </p>
+                  )}
+
+                  {urlItem.indicators.length > 0 && (
+                    <ul className="space-y-1 text-xs text-[#52645E]">
+                      {urlItem.indicators.map((ind, iIdx) => (
+                        <li key={`ind-${iIdx}`} className="flex items-start gap-1.5">
+                          <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-[#647873]" aria-hidden="true" />
+                          <span>
+                            <strong className="font-medium text-[#17312D]">{ind.title}:</strong>{" "}
+                            {ind.description}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <p className="text-[11px] text-[#647873] border-t border-[#E7EEEA] pt-2">
+                    {urlItem.threatIntel?.checked
+                      ? `External threat intelligence: ${urlItem.threatIntel.details}`
+                      : "Analysis based on local heuristic inspection. Destination website was not visited."}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-xs text-[#647873]">
+            No links were detected in this message. Analysis focused on message text patterns.
+          </p>
         )}
       </div>
 
@@ -267,7 +367,7 @@ export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
           type="button"
           onClick={handleCopySummary}
           aria-label="Copy assessment summary to clipboard"
-          className="rounded-lg border border-[#D9E7E1] bg-white px-3 py-1.5 text-xs font-medium text-[#17312D] transition-colors hover:bg-[#F2F7F4] focus-ring"
+          className="rounded-lg border border-[#D9E7E1] bg-white px-3 py-1.5 text-xs font-medium text-[#17312D] transition-colors hover:bg-[#F2F7F4] focus-ring cursor-pointer"
         >
           {copyStatus === "copied"
             ? "Summary copied"
@@ -278,7 +378,7 @@ export function ResultsPanel({ result, onReset }: ResultsPanelProps) {
         <button
           type="button"
           onClick={onReset}
-          className="rounded-lg border border-[#D9E7E1] bg-[#F2F7F4] px-3 py-1.5 text-xs font-medium text-[#17312D] transition-colors hover:bg-[#D9E7E1]/40 focus-ring"
+          className="rounded-lg border border-[#D9E7E1] bg-[#F2F7F4] px-3 py-1.5 text-xs font-medium text-[#17312D] transition-colors hover:bg-[#D9E7E1]/40 focus-ring cursor-pointer"
         >
           Check another message
         </button>

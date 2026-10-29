@@ -7,6 +7,15 @@ export const CATEGORY_CAPS: Record<SignalCategory, number> = {
   suspicious_link: 35,
   impersonation: 30,
   security_advisory: 0,
+  job_scam: 35,
+  investment_fraud: 35,
+  delivery_scam: 30,
+  government_impersonation: 35,
+  remote_access: 35,
+  tech_support: 35,
+  malicious_attachment: 35,
+  upi_payment_scam: 40,
+  utility_cutoff: 35,
 };
 
 export const RISK_THRESHOLDS = {

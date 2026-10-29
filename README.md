@@ -12,24 +12,31 @@ Suspicious messages can use misleading claims, unusual links, requests for priva
 
 ## Key Features
 
-- Scan a message by typing or pasting between 5 and 5,000 characters.
-- View a low, medium, or high risk classification and a 0–100 rule score.
-- Review detected warning signs and their matching message text.
-- Expand the checked message to see relevant evidence highlighted.
-- Get simple recommendations based on the assessment.
-- Use a responsive interface with input validation, clear error feedback, and options to copy the summary or start another scan.
+- **Expanded Scam Recognition**: Detects modern deception patterns across UPI payment traps, QR receipt scams, KYC/PAN expiry countdowns, fake courier and customs fees, fake job offers, investment/crypto fraud, government or law enforcement impersonation, and remote desktop lures.
+- **Context-Aware Negation**: Reduces false positives by recognizing protective security advisories (e.g., "Never share your OTP"), official scam warnings, and routine delivery updates.
+- **Dedicated Link & Website Intelligence**: Safely extracts URLs (HTTP, HTTPS, www, Punycode/Unicode) and inspects them for IP-address hosts, URL shorteners, unusual ports, open redirect parameters, sensitive paths, and lookalike domain mimicry.
+- **Brand Lookalike Detection**: Evaluates hostnames against curated reference domains for major banks, fintech apps, couriers, and platforms, detecting deceptive hyphenated keywords and typosquatting variations.
+- **Explainable Findings & Defanged Display**: Displays defanged hostnames as non-clickable plain text, highlights character-exact message evidence spans, and provides plain-language safety recommendations.
+- **Deterministic Risk Scoring**: 0–100 score with Low (0–24), Medium (25–54), and High (55–100) tiers. High risk requires meaningful evidence and avoids single-word or benign URL false alarms.
+- **Local & Privacy-Preserving by Default**: Analyzes messages and URLs locally on the server without making outbound requests to user-submitted links, preventing Server-Side Request Forgery (SSRF) and data leakage.
 
 ## How It Works
 
-1. Paste or type a message you want to check.
+1. Paste or type a message you want to check (5 to 5,000 characters).
 2. Select **Analyze Message**.
-3. Review the risk assessment, score, and highlighted warning signs.
-4. Follow the recommendations and verify important requests through a trusted channel.
+3. Review the overall risk assessment, rule score, and detected warning signs.
+4. Inspect the **Links in message** section to see extracted hostnames, potential brand impersonation, and observable technical reasons for concern.
+5. Follow the recommendations and verify important requests through official channels.
+
+### Heuristic Analysis vs. Threat Intelligence
+
+- **Local Heuristics (Default)**: Inspects structural patterns, brand databases, and deceptive domain formations entirely within the application without querying external websites.
+- **Optional Threat-Intelligence Enrichment**: If configured on the server via `THREAT_INTEL_API_URL` and `THREAT_INTEL_API_KEY`, the server can optionally query reputable reputation feeds with strict SSRF validation and timeout protection. No raw user message text or sensitive query parameters are ever transmitted to third-party reputation providers.
 
 ## Technology Stack
 
 - **Next.js 16** and **React 19** for the web application.
-- **TypeScript** for application code and types.
+- **TypeScript** for application code and strict types.
 - **Tailwind CSS 4** for styling.
 - **Zod** for validating analysis requests and results.
 - **Vitest** and **Testing Library** for automated tests.
@@ -83,13 +90,16 @@ app/
 components/
   BrandHeader.tsx         SUS wordmark
   ScannerForm.tsx         Message input and validation
-  ResultsPanel.tsx        Assessment, findings, and recommendations
+  ResultsPanel.tsx        Assessment, findings, URL cards, and recommendations
 lib/
-  analyzer/               Detection rules and scoring logic
-  schemas.ts              Request and result validation
-__tests__/                Component, API, and analysis tests
+  analyzer/               Detection rules, multi-signal overrides, scoring engine
+    url/                  URL extractor, brand registry, heuristics, and SSRF guards
+  schemas.ts              Request and result validation (Zod)
+__tests__/                Unit, component, ReDoS, SSRF, category, and integration tests
 ```
 
-## Disclaimer
+## Privacy & Limitations
 
-Sus provides indicators to help assess suspicious messages. Its score and findings are not proof that a message is fraudulent or safe. Verify important requests independently using official websites, apps, or contact details you already trust.
+- **Heuristic Indicators, Not Proof**: Sus flags suspicious patterns and observable risk factors. Findings do not constitute definitive legal or cryptographic proof that a message is fraudulent or safe.
+- **Local Inspection Only**: Sus does not visit or execute code from untrusted websites. It cannot verify live page content or dynamic redirects that require live browsing.
+- **Verify Independently**: Always confirm urgent communications, payment requests, or account alerts directly through official mobile apps, banking helplines, or verified domains you independently navigate to.

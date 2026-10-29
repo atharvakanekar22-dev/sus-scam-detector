@@ -52,6 +52,7 @@ export default function Home() {
         recommendedSteps: engineResponse.recommendedSteps,
         isMock: false,
         rawMessage: message,
+        analyzedUrls: engineResponse.analyzedUrls,
         metadata: {
           ...engineResponse.metadata,
           analysisMode: engineResponse.metadata.analysisMode,
